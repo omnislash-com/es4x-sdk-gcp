@@ -1,0 +1,32 @@
+{
+	"name": "es4x-sdk-gcp",
+	"displayName": "ES4X GCP SDK",
+	"version": "0.1.0",
+	"description": "SDK to call Google Cloud Platform services for the ES4X Runtime.",
+	"main": "index.js",
+	"keywords": ["es4x", "javascript", "vertex"],
+	"author": {
+		"name": "Michael Jegat (Omnislash)",
+		"email": "michael@omnislash.com",
+		"url": "https://omnislash.com"
+	},
+	"dependencies": {
+		"@vertx/core": "4.1.0",
+		"@vertx/web": "4.2.5",
+		"@vertx/web-client": "4.2.5",
+		"jsrsasign": "10.5.27",
+		"es4x-utils": "git+https://github.com/omnislash-com/es4x-utils.git#main"
+	},
+	"devDependencies": {
+		"@es4x/create": "0.14.0",
+		"@vertx/unit": "4.1.0"
+	},
+	"mvnDependencies": [
+		"com.fasterxml.jackson.core:jackson-databind:2.9.10.3"
+	],
+	"scripts": {
+		"postinstall": "es4x install",
+		"start": "es4x",
+		"test:Firestore": "es4x test tests/Firestore.test.js"
+	}
+}
