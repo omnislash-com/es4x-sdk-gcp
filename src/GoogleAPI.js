@@ -9,6 +9,7 @@ import { GCPFirestore } from './services/GCPFirestore';
 import { GCPTask } from './services/GCPTask';
 import { GCPFCMService } from './services/GCPFCMService';
 import { GCPPubSubService } from './services/GCPPubSubService';
+import { GCPStorageService } from './services/GCPStorageService';
 
 
 const	configDEV = require('../keys/omni-backend-dev-e0b504c8260d.json');
@@ -19,8 +20,6 @@ const	rs = require('jsrsasign');
 
 class	GoogleAPI
 {
-	static	get	HOST_STORAGE()		{ return "storage.googleapis.com"; }	
-
 	static	get	PROJECT_DEV()		{ return "omni-backend-dev";	}
 	static	get	PROJECT_STAGING()	{ return "omni-backend-staging";	}
 	static	get	PROJECT_PROD()		{ return "omni-backend-prod";	}
@@ -40,6 +39,7 @@ class	GoogleAPI
 		this.__task = null;
 		this.__fcm = null;
 		this.__pubsub = null;
+		this.__storage = null;
 	}
 
 
@@ -382,6 +382,54 @@ class	GoogleAPI
 		return sJWT;
 	}
 
+
+
+
+
+
+
+
+
+
+	/******************************
+	* 
+	*			Storage
+	* 
+	******************************/
+	getStorage()
+	{
+		if (this.__storage == null)
+		{
+			this.__storage = new GCPStorageService(this);
+		}
+
+		return this.__storage;
+	}
+
+	async	storage_getJSON(_bucket, _path, _default = null)
+	{
+		return await this.getStorage().getJSON(_bucket, _path, _default);
+	}
+
+	async	storage_setJSON(_bucket, _path, _content)
+	{
+		return await this.getStorage().setJSON(_bucket, _path, _content);
+	}
+
+	async	storage_rewrite(_srcBucket, _srcPath, _destPath, _destBucket = "")
+	{
+		return await this.getStorage().rewrite(_srcBucket, _srcPath, _destPath, _destBucket);
+	}
+
+	storage_generateSignedUrl(_bucketName, _targetPath, _expiration = 3600, _httpMethod = "PUT")
+	{
+		return this.getStorage().generateSignedUrl(_bucketName, _targetPath, _expiration, _httpMethod);
+	}
+
+
+
+
+
 	async	query(_query, _returnFullResponse = false)
 	{
 		// generate the JWT token
@@ -412,230 +460,7 @@ class	GoogleAPI
 			return result;
 		else
 			return result.statusCode;
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// https://cloud.google.com/storage/docs/json_api/v1/objects/get
-	async	storage_getJSON(_bucket, _path, _default = null)
-	{
-		// make sure the path doesn't start with '/'
-		_path = this.storage_cleanPath(_path);
-
-		// prepare the endpoint
-		let	safePath = encodeURIComponent(_path);
-		let	endpoint = "/storage/v1/b/" + _bucket + "/o/" + safePath + "?alt=media";
-
-		// prepare the query
-		let	query = {
-			"service": GoogleAPI.HOST_STORAGE,
-			"scope": "https://www.googleapis.com/auth/cloud-platform",
-			"endpoint": endpoint,
-			"method": HttpMethod.GET
-		};
-
-		// send the query
-		let	ret = await this.query(query, true);
-
-		// error code?
-		let	errorCodeQuery = ObjUtils.GetValueToInt(ret, "statusCode");
-		let	jsonObject = _default;
-		if (errorCodeQuery == 200)
-		{
-			// parse the content
-			let	contentStr = ObjUtils.GetValue(ret, "content", "");
-			jsonObject = JSON.parse(contentStr);
-		}
-		
-		return {
-			statusCode: errorCodeQuery,
-			content: jsonObject
-		};
-	}
-
-	// https://cloud.google.com/storage/docs/json_api/v1/objects/insert
-	async	storage_setJSON(_bucket, _path, _content)
-	{
-		// make sure the path doesn't start with '/'
-		_path = this.storage_cleanPath(_path);
-
-		// prepare the endpoint
-		let	safePath = encodeURIComponent(_path);
-		let	endpoint = "/upload/storage/v1/b/" + _bucket + "/o?uploadType=media&name=" + safePath;
-
-		// prepare the query
-		let	query = {
-			"service": GoogleAPI.HOST_STORAGE,
-			"scope": "https://www.googleapis.com/auth/cloud-platform",
-			"endpoint": endpoint,
-			"method": HttpMethod.POST,
-			"body": _content
-		};
-
-		// send the query
-		let	ret = await this.query(query, true);
-
-		// error code?
-		return ObjUtils.GetValueToInt(ret, "statusCode");
-	}
-
-	// https://cloud.google.com/storage/docs/json_api/v1/objects/rewrite
-	async	storage_rewrite(_srcBucket, _srcPath, _destPath, _destBucket = "")
-	{
-		// make sure we have the dest bucket
-		if (StringUtils.IsEmpty(_destBucket) == true)
-			_destBucket = _srcBucket;
-
-		// make sure the paths don't start with '/'
-		_srcPath = this.storage_cleanPath(_srcPath);
-		_destPath = this.storage_cleanPath(_destPath);
-
-		// prepare the endpoint
-		let	safeSrcPath = encodeURIComponent(_srcPath);
-		let	safeDestPath = encodeURIComponent(_destPath);
-		let	endpoint = "/storage/v1/b/" + _srcBucket + "/o/" + safeSrcPath + "/rewriteTo/b/" + _destBucket + "/o/" + safeDestPath;
-
-		// prepare the query
-		let	query = {
-			"service": GoogleAPI.HOST_STORAGE,
-			"scope": "https://www.googleapis.com/auth/cloud-platform",
-			"endpoint": endpoint,
-			"method": HttpMethod.POST,
-			"body": {}
-		};
-
-		// we are not done yet
-		let	errorCode = 0;
-		let	rewriteToken = "";
-		while(errorCode == 0)
-		{
-			// do we need to pass the rewrite token?
-			if (StringUtils.IsEmpty(rewriteToken) == false)
-			{
-				query.endpoint = endpoint + "?rewriteToken=" + rewriteToken;
-			}
-
-			// send the query
-			let	ret = await this.query(query, true);
-
-			// error code?
-			let	errorCodeQuery = ObjUtils.GetValueToInt(ret, "statusCode");
-			if (errorCodeQuery != 200)
-				errorCode = errorCodeQuery;	// ERROR
-			else
-			{
-				// parse the content
-				let	contentStr = ObjUtils.GetValue(ret, "content", "");
-				let	contentJSON = JSON.parse(contentStr);// StringUtils.ToJSON(contentStr, true, true, true);
-
-				// let see if we are done
-				let	done = ObjUtils.GetValueToBool(contentJSON, "done");
-				if (done == true)
-					errorCode = 200;
-				else
-				{
-					// do we need to query again?
-					rewriteToken = ObjUtils.GetValue(contentJSON, "rewriteToken", "");
-					if (StringUtils.IsEmpty(rewriteToken) == true)
-						errorCode = 400;	// ERROR
-				}
-			}
-		}
-
-		return errorCode;
-	}
-
-	storage_generateSignedUrl(_bucketName, _targetPath, _expiration = 3600, _httpMethod = "PUT")
-	{
-		// init dates
-		let	date = new Date();
-		let	datestamp = DateUtils.DateToDateStr(date, "");	// format: YYYYMMDD
-		let	requestTimestamp = DateUtils.DateToZuluStr(date, false, "", "T", "");	// format: YYYYMMDD'T'HHMMSS'Z'
-		let	credentialScope = datestamp + "/auto/storage/goog4_request";
-
-		// prepare the headers			
-		let	host = _bucketName + ".storage.googleapis.com";
-		let	headers = {
-			host: host
-		};
-		let	signedHeaders = Object.keys(headers).join(";");
-
-		// build the Canonical request (https://cloud.google.com/storage/docs/authentication/canonical-requests)
-		let	canonicalElements = [];
-
-		// - HTTP METHOD
-		canonicalElements.push(_httpMethod.toUpperCase());
-
-		// - RESOURCE PATH
-		if (_targetPath.startsWith("/") == false)
-			_targetPath = "/" + _targetPath;
-		canonicalElements.push(_targetPath);
-		
-		// - QUERY PARAMETERS
-		let	queryParameters = {};
-		queryParameters["X-Goog-Algorithm"] = 'GOOG4-RSA-SHA256';
-		queryParameters["X-Goog-Credential"] = this.getClientEmail() + "/" + credentialScope;
-		queryParameters["X-Goog-Date"] = requestTimestamp;
-		queryParameters["X-Goog-Expires"] = _expiration;
-		queryParameters["X-Goog-SignedHeaders"] = signedHeaders;
-		let	queryParametersStr = ObjUtils.SerializeObject(queryParameters);
-		canonicalElements.push(queryParametersStr);
-
-		// - HEADERS
-		let	headersStr = ObjUtils.SerializeObject(headers, "\n", ":", false) + "\n";
-		canonicalElements.push(headersStr);
-
-		// - SIGNED HEADERS
-		canonicalElements.push(signedHeaders);
-
-		// - PAYLOAD: UNSIGNED-PAYLOAD
-		canonicalElements.push('UNSIGNED-PAYLOAD');
-
-		// generate the canonical string
-		let	canonicalRequestStr = canonicalElements.join("\n");
-
-		// create the hashed canonical request
-		let	canonicalRequestHash = StringUtils.SHA256(canonicalRequestStr);
-
-		// build the string to sign
-		let	stringToSign = [
-			'GOOG4-RSA-SHA256',
-			requestTimestamp,
-			credentialScope,
-			canonicalRequestHash
-		].join("\n");
-
-		// create the signature
-		let	signatureEngine = new rs.KJUR.crypto.Signature({"alg": "SHA256withRSA"});
-		signatureEngine.init(this.getPrivateKey());
-		let	signature = signatureEngine.signString(stringToSign);
-
-		// build the final URL
-		let	signedUrl = "https://" + host + _targetPath + "?" + queryParametersStr + "&x-goog-signature=" + signature;
-
-		return signedUrl;
-	}
-
-	storage_cleanPath(_path)
-	{
-		if (_path.startsWith("/") == true)
-			return _path.substr(1);
-		else
-			return _path;
-	}
-
+	}	
 };
 
 module.exports = {

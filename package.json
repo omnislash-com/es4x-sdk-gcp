@@ -30,6 +30,7 @@
 		"test:Firestore": "es4x test tests/Firestore.test.js",
 		"test:Task": "es4x test tests/Task.test.js",
 		"test:FCM": "es4x test tests/FCM.test.js",
-		"test:PubSub": "es4x test tests/PubSub.test.js"
+		"test:PubSub": "es4x test tests/PubSub.test.js",
+		"test:Storage": "es4x test tests/Storage.test.js"
 	}
 }

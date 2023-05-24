@@ -21,6 +21,16 @@ class	GCPAbstractService
 		return this.__api.getProjectLocation();
 	}
 
+	getClientEmail()
+	{
+		return this.__api.getClientEmail();
+	}
+
+	getPrivateKey()
+	{
+		return this.__api.getPrivateKey();
+	}
+
 	getHost()
 	{
 		throw new Error("Abstract Method has no implementation");
