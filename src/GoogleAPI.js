@@ -8,6 +8,7 @@ import { WebClientMgr } from 'es4x-utils/src/network/WebClientMgr';
 import { GCPFirestore } from './services/GCPFirestore';
 import { GCPTask } from './services/GCPTask';
 import { GCPFCMService } from './services/GCPFCMService';
+import { GCPPubSubService } from './services/GCPPubSubService';
 
 
 const	configDEV = require('../keys/omni-backend-dev-e0b504c8260d.json');
@@ -18,10 +19,7 @@ const	rs = require('jsrsasign');
 
 class	GoogleAPI
 {
-	static	get	HOST_PUBSUB()		{ return "pubsub.googleapis.com"; }	
 	static	get	HOST_STORAGE()		{ return "storage.googleapis.com"; }	
-
-	static	get	API_VERSION_1()	{ return "v1";	}
 
 	static	get	PROJECT_DEV()		{ return "omni-backend-dev";	}
 	static	get	PROJECT_STAGING()	{ return "omni-backend-staging";	}
@@ -41,11 +39,42 @@ class	GoogleAPI
 		this.__firestore = null;
 		this.__task = null;
 		this.__fcm = null;
+		this.__pubsub = null;
+	}
+
+
+	/******************************
+	* 
+	*			PubSub
+	* 
+	******************************/
+	getPubSub()
+	{
+		if (this.__pubsub == null)
+		{
+			this.__pubsub = new GCPPubSubService(this);
+		}
+
+		return this.__pubsub;
+	}
+
+	async	pubSub_publishMessage(_topicId, _dataJson)
+	{
+		return await this.getPubSub().publishMessage(_topicId, _dataJson);
+	}
+
+	async	extractPayloadFromPubSub(_postData)
+	{
+		return GCPPubSubService.ExtractPayload(_postData);
 	}
 
 
 
-
+	/******************************
+	* 
+	*			Firebase FCM
+	* 
+	******************************/
 	getFCM()
 	{
 		if (this.__fcm == null)
@@ -63,7 +92,11 @@ class	GoogleAPI
 
 
 
-
+	/******************************
+	* 
+	*			Cloud Task
+	* 
+	******************************/
 	getTask()
 	{
 		if (this.__task == null)
@@ -80,9 +113,11 @@ class	GoogleAPI
 	}
 
 
-
-
-
+	/******************************
+	* 
+	*			Firestore
+	* 
+	******************************/
 	getFirestore()
 	{
 		if (this.__firestore == null)
@@ -385,61 +420,13 @@ class	GoogleAPI
 
 
 
-	async	pubSub_publishMessage(_topicId, _dataJson)
-	{
-		// prepare the body payload
-		let	body = {
-			"messages": [
-				{
-					"data": StringUtils.StringToBase64(JSON.stringify(_dataJson)),	// convert to base64
-				}
-			]
-		};
 
-		// prepare the endpoint
-		let	endpoint = GoogleAPI.PubSub_GetTopicPath(this.getProjectId(), _topicId) + ":publish";
-		let	fullEndpoint = "/" + GoogleAPI.API_VERSION_1 + "/" + endpoint;
 
-		// prepare the query
-		let	query = {
-			"service": GoogleAPI.HOST_PUBSUB,
-			"scope": "https://www.googleapis.com/auth/cloud-platform",
-			"endpoint": fullEndpoint,
-			"method": HttpMethod.POST,
-			"body": body
-		};
 
-		// send the query
-		return await this.query(query);		
-	}
 
-	async	extractPayloadFromPubSub(_postData)
-	{
-		// get the data field
-		let	dataBase64 = ObjUtils.GetValue(_postData, "message.data", "");
 
-		// nothing?
-		if (StringUtils.IsEmpty(dataBase64) == true)
-		{
-			LogUtils.LogError("Base64 data is empty!");
-			return null;
-		}
 
-		// convert from base64 to string
-		let	dataStr = StringUtils.Base64ToString(dataBase64);
 
-		// nothing?
-		if (StringUtils.IsEmpty(dataStr) == true)
-		{
-			LogUtils.LogError("Data is empty!");
-			return null;
-		}
-
-		// convert to JSON
-		let	dataJson = JSON.parse(dataStr);
-
-		return dataJson;
-	}
 
 	// https://cloud.google.com/storage/docs/json_api/v1/objects/get
 	async	storage_getJSON(_bucket, _path, _default = null)
@@ -649,12 +636,6 @@ class	GoogleAPI
 			return _path;
 	}
 
-
-
-	static	PubSub_GetTopicPath(_project, _topicId)
-	{
-		return "projects/" + _project + "/topics/" + _topicId;
-	}	
 };
 
 module.exports = {
