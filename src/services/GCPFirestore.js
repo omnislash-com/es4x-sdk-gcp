@@ -1,6 +1,5 @@
 import { GCPAbstractService } from './GCPAbstractService';
 
-
 import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 import { StringUtils } from 'es4x-utils/src/utils/StringUtils';
 import { DateUtils } from 'es4x-utils/src/utils/DateUtils';

@@ -7,6 +7,7 @@ import { WebClientMgr } from 'es4x-utils/src/network/WebClientMgr';
 
 import { GCPFirestore } from './services/GCPFirestore';
 import { GCPTask } from './services/GCPTask';
+import { GCPFCMService } from './services/GCPFCMService';
 
 
 const	configDEV = require('../keys/omni-backend-dev-e0b504c8260d.json');
@@ -18,7 +19,6 @@ const	rs = require('jsrsasign');
 class	GoogleAPI
 {
 	static	get	HOST_PUBSUB()		{ return "pubsub.googleapis.com"; }	
-	static	get	HOST_FCM()			{ return "fcm.googleapis.com"; }	
 	static	get	HOST_STORAGE()		{ return "storage.googleapis.com"; }	
 
 	static	get	API_VERSION_1()	{ return "v1";	}
@@ -40,7 +40,29 @@ class	GoogleAPI
 		// services
 		this.__firestore = null;
 		this.__task = null;
-	}	
+		this.__fcm = null;
+	}
+
+
+
+
+	getFCM()
+	{
+		if (this.__fcm == null)
+		{
+			this.__fcm = new GCPFCMService(this);
+		}
+
+		return this.__fcm;
+	}
+
+	async	firebase_sendPushNotification(_fcmToken, _title, _body, _image = "", _data = null)
+	{
+		return await this.getFCM().sendPushNotification(_fcmToken, _title, _body, _image, _data);
+	}
+
+
+
 
 	getTask()
 	{
@@ -357,78 +379,11 @@ class	GoogleAPI
 			return result.statusCode;
 	}
 
-	firebase_buildPushNotificationPayload(_fcmToken, _title, _body, _image = "", _data = null)
-	{
-		// create the notification content
-		let	notificationPayload = {
-			"message": {
-				"token": _fcmToken,
-				"notification": {
-					"title": _title,
-					"body": _body
-				}
-			}
-		};
 
-		// add data?
-		if (_data != null)
-			notificationPayload.message["data"] = _data;
 
-		// add image?
-		if (StringUtils.IsEmpty(_image) == false)
-		{
-			// ANDROID
-			notificationPayload.message["android"] = {
-				"notification": {
-					"image": _image,
-					"sound": "default"
-				}
-			};
 
-			// iOS
-			notificationPayload.message["apns"] = {
-				"payload": {
-					"aps": {
-						"mutable-content": 1,
-						"sound": "default"
-					}
-				},
-				"fcm_options": {
-					"image": _image
-				}
-			};			
 
-			// web
-			notificationPayload.message["webpush"] = {
-				"headers": {
-					"image": _image
-				}
-			};
-		}
 
-		return notificationPayload;
-	}
-
-	async	firebase_sendPushNotification(_fcmToken, _title, _body, _image = "", _data = null)
-	{
-		// build the notification payload
-		let	notificationPayload = this.firebase_buildPushNotificationPayload(_fcmToken, _title, _body, _image, _data);
-
-		// prepare the endpoint
-		let	fullEndpoint = "/" + GoogleAPI.API_VERSION_1 + "/projects/" + this.getProjectId() + "/messages:send" ;
-
-		// prepare the query
-		let	query = {
-			"service": GoogleAPI.HOST_FCM,
-			"scope": "https://www.googleapis.com/auth/firebase.messaging",
-			"endpoint": fullEndpoint,
-			"method": HttpMethod.POST,
-			"body": notificationPayload
-		};
-
-		// send the query
-		return await this.query(query);
-	}
 
 	async	pubSub_publishMessage(_topicId, _dataJson)
 	{

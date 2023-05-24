@@ -1,17 +1,13 @@
 import { GCPAbstractService } from './GCPAbstractService';
 
-
-import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 import { StringUtils } from 'es4x-utils/src/utils/StringUtils';
 import { DateUtils } from 'es4x-utils/src/utils/DateUtils';
 import { LogUtils } from 'es4x-utils/src/utils/LogUtils';
-import { CoreUtils } from 'es4x-utils/src/utils/CoreUtils';
-import { ArrayUtils } from 'es4x-utils/src/utils/ArrayUtils';
 
 
 class	GCPTask	extends GCPAbstractService
 {
-	static	get	API_VERSION_2()	{ return "v2";	}
+	static	get	API_VERSION()	{ return "v2";	}
 
 	constructor(_googleAPI)
 	{
@@ -54,7 +50,7 @@ class	GCPTask	extends GCPAbstractService
 
 		// prepare the endpoint
 		let	endpoint = GCPTask.GetQueuePath(this.getProjectId(), this.getProjectLocation(), _queue) + "/tasks";
-		let	fullEndpoint = "/" + GCPTask.API_VERSION_2 + "/" + endpoint;
+		let	fullEndpoint = "/" + GCPTask.API_VERSION + "/" + endpoint;
 
 		// send the query
 		let	ret = await this.queryPOST(fullEndpoint, false, body);
