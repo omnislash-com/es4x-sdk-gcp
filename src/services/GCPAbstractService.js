@@ -16,6 +16,11 @@ class	GCPAbstractService
 		return this.__api.getProjectId(_prodIsStaging);
 	}
 
+	getProjectLocation()
+	{
+		return this.__api.getProjectLocation();
+	}
+
 	getHost()
 	{
 		throw new Error("Abstract Method has no implementation");

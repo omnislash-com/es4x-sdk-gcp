@@ -9,7 +9,7 @@ import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 import { GoogleAPI } from '../src/GoogleAPI';
 import { GCPFirestore } from '../src/services/GCPFirestore';
 
-const suite = TestSuite.create("ES4X Test: ArrayUtils");
+const suite = TestSuite.create("ES4X Test: Firestore");
 
 
 suite.test("GoogleAPI.firestore_createDocument", async function (context) {
