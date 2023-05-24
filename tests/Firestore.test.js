@@ -6,8 +6,9 @@ import { StringUtils } from 'es4x-utils/src/utils/StringUtils';
 import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 
 
-import { GoogleAPI } from '../src/GoogleAPI';
 import { GCPFirestore } from '../src/services/GCPFirestore';
+import { GoogleAPI } from '../src/GoogleAPI';
+const	config = require('./test_config.json');
 
 const suite = TestSuite.create("ES4X Test: Firestore");
 
@@ -18,6 +19,9 @@ suite.test("GoogleAPI.firestore_createDocument", async function (context) {
 
 	try
 	{
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
 		let	env = "dev";
 		let	testId = "test_" + DateUtils.NowToUniqString();
 		let	path = "test/createdocumentid/" + testId;
@@ -39,9 +43,6 @@ suite.test("GoogleAPI.firestore_createDocument", async function (context) {
 				today: 90
 			}
 		};
-
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
 
 		console.log("Firestore 1: Create document...");
 		let	result = await googleApi.firestore_createDocument(path, data, documentId);
@@ -103,6 +104,9 @@ suite.test("GoogleAPI.firestore_list", async function (context) {
 
 	try
 	{
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
 		let	env = "dev";
 		let	testId = "test_" + DateUtils.NowToUniqString();
 		let	path = "test/list/" + testId;
@@ -132,9 +136,6 @@ suite.test("GoogleAPI.firestore_list", async function (context) {
 				"index": 1
 			},
 		];
-
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
 
 		// insert all of them
 		for(let i=0; i<items.length; i++)
@@ -188,14 +189,14 @@ suite.test("GCPFirestore.Firestore_Batch", async function (context) {
 
 	try
 	{
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
 		let	env = "dev";
 		let	testId = "test_" + DateUtils.NowToUniqString();
 		let	path = "test/list/" + testId;
 		console.log("Firestore Batch test: " + path);
 
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
-		
 		// init
 		let	batchInfo = GCPFirestore.Batch_Init();
 		context.assertEquals(batchInfo.create.length, 0);

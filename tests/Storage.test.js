@@ -5,6 +5,7 @@ import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 import { DateUtils } from 'es4x-utils/src/utils/DateUtils';
 
 import { GoogleAPI } from '../src/GoogleAPI';
+const	config = require('./test_config.json');
 
 const suite = TestSuite.create("ES4X Test: Storage");
 
@@ -15,15 +16,13 @@ suite.test("GoogleAPI.storage_rewrite", async function (context) {
 
 	try
 	{
-		let	env = "dev";
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
 		let	srcBucket = "player_vault_dev";
-//		let	srcObject = "/test/02_Perso-20190311T165343Z-001.zip";
-//		let	destObject = "/test/COPY_02_Perso-20190311T165343Z-001.zip";
 		let	srcObject = "/users/22/matches/20220812_185115082000_22_valve_csgo_bcb2c886/server_log.txt.zip";
 		let	destObject = "/test/copy_server_log.txt.zip";
 
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
 
 		console.log("Copying storage file...");
 		let	result = await googleApi.storage_rewrite(srcBucket, srcObject, destObject);
@@ -46,12 +45,12 @@ suite.test("GoogleAPI.storage_getJSON", async function (context) {
 
 	try
 	{
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
 		let	env = "dev";
 		let	bucket = "data_aggregator";
 		let	objectPath = "/test/package.json";
-
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
 
 		console.log("Getting existing storage file...");
 		let	result = await googleApi.storage_getJSON(bucket, objectPath);
@@ -90,6 +89,9 @@ suite.test("GoogleAPI.storage_setJSON", async function (context) {
 
 	try
 	{
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
 		let	env = "dev";
 		let	bucket = "data_aggregator";
 		let	objectPath = "/test/upload_" + DateUtils.NowToUniqString() + ".json";
@@ -107,9 +109,6 @@ suite.test("GoogleAPI.storage_setJSON", async function (context) {
 				]
 			}
 		};
-
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
 
 		console.log("Setting JSON to storage file: " + objectPath);
 		let	result = await googleApi.storage_setJSON(bucket, objectPath, objectData);
@@ -141,8 +140,10 @@ suite.test("GoogleAPI.storage_generateSignedUrl", async function (context) {
 	console.log("=> Test storage_generateSignedUrl");
 
 	// create the google api object
+	let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
+	// create the google api object
 	let	env = "dev";
-	let	googleApi = new GoogleAPI(vertx, env);
 
 	// generate a signed url to upload
 	let	bucket = "player_vault_dev";

@@ -353,7 +353,7 @@ class	GCPFirestore	extends GCPAbstractService
 
 	parentPath(_path, _databaseId = "(default)", _documentId = "")
 	{
-		let	path = "projects/" + this.getProjectId(true) + "/databases/" + _databaseId + "/documents";
+		let	path = "projects/" + this.getProjectId() + "/databases/" + _databaseId + "/documents";
 		if (StringUtils.IsEmpty(_path) == false)
 			path += "/" + _path;
 		if (StringUtils.IsEmpty(_documentId) == false)

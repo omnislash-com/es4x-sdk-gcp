@@ -3,6 +3,7 @@
 import { TestSuite } from '@vertx/unit';
 
 import { GoogleAPI } from '../src/GoogleAPI';
+const	config = require('./test_config.json');
 
 const suite = TestSuite.create("ES4X Test: PubSub");
 
@@ -13,14 +14,14 @@ suite.test("GoogleAPI.pubSub_publishMessage", async function (context) {
 
 	try
 	{
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
 		let	env = "dev";
 		let	topic = "posts";
 		let	body = {
 			"test": "content"
 		}
-
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
 
 		console.log("About to send the query...");
 		let	result = await googleApi.pubSub_publishMessage(topic, body);

@@ -1,7 +1,4 @@
-import { HttpMethod } from '@vertx/core/options';
 import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
-import { StringUtils } from 'es4x-utils/src/utils/StringUtils';
-import { DateUtils } from 'es4x-utils/src/utils/DateUtils';
 import { LogUtils } from 'es4x-utils/src/utils/LogUtils';
 import { WebClientMgr } from 'es4x-utils/src/network/WebClientMgr';
 
@@ -10,37 +7,105 @@ import { GCPTask } from './services/GCPTask';
 import { GCPFCMService } from './services/GCPFCMService';
 import { GCPPubSubService } from './services/GCPPubSubService';
 import { GCPStorageService } from './services/GCPStorageService';
-
-
-const	configDEV = require('../keys/omni-backend-dev-e0b504c8260d.json');
-const	configSTAGING = require('../keys/omni-backend-staging-1bb6a7f02838.json');
-const	configPROD = require('../keys/omni-backend-prod-04f4958e8fab.json');
-const	rs = require('jsrsasign');
+import { GCPAuthService } from './services/GCPAuthService';
 
 
 class	GoogleAPI
-{
-	static	get	PROJECT_DEV()		{ return "omni-backend-dev";	}
-	static	get	PROJECT_STAGING()	{ return "omni-backend-staging";	}
-	static	get	PROJECT_PROD()		{ return "omni-backend-prod";	}
-	static	get	LOCATION_DEV()		{ return "us-central1";	}
-	static	get	LOCATION_STAGING()	{ return "us-central1";	}
-	static	get	LOCATION_PROD()		{ return "us-central1";	}
-	
-	constructor(_vertx, _env = "")
+{	
+	constructor(_vertx, _location, _key, _isLocal = false)
 	{
-		this.__env = _env;
+		this.__isLocal = _isLocal;
+		this.__location = _location;
+		this.__projectId = ObjUtils.GetValueToString(_key, "project_id");
+		this.__privateKey = ObjUtils.GetValueToString(_key, "private_key");
+		this.__clientEmail = ObjUtils.GetValueToString(_key, "client_email");
+
 		this.__vertx = _vertx;
 		this.__webClient = null;
-		this.__tokens = {};
 
 		// services
+		this.__auth = null;
 		this.__firestore = null;
 		this.__task = null;
 		this.__fcm = null;
 		this.__pubsub = null;
 		this.__storage = null;
 	}
+
+	isLocalEnv()
+	{
+		return this.__isLocal;
+	}
+
+	getProjectId()
+	{
+		return this.__projectId;
+	}
+
+	getProjectLocation()
+	{
+		return this.__location;
+	}
+
+	getPrivateKey()
+	{
+		return this.__privateKey;
+	}
+
+	getClientEmail()
+	{
+		return this.__clientEmail;
+	}
+
+	getWebClient()
+	{
+		// lazy load the web client only when we need it
+		if (this.__webClient == null)
+		{
+			this.__webClient = new WebClientMgr(this.__vertx);
+		}
+
+		// return it
+		return this.__webClient;		
+	}	
+
+	async	query(_query, _returnFullResponse = false)
+	{
+		// generate the JWT token
+		let	token = await this.getAuthToken(_query.scope);
+		if (token == null)
+		{
+			LogUtils.LogError("Error: unauthorized");
+			return 401;
+		}
+
+		// prepare the headers
+		let	headers = {
+			"Content-Type": "application/json",
+			"Authorization": "Bearer " + token
+		};
+
+		// get the webclient
+		let	webClient = this.getWebClient();
+
+		// depending on the method
+		LogUtils.Log("- Sending " + _query.method + " request to: " + _query.service + _query.endpoint, {"body": _query.body});
+		let	result = await webClient.query(_query.method, _query.service, _query.endpoint, _query.body, headers);
+
+		if (result != null)
+			LogUtils.Log("Result = " + result.statusCode, {"request_message": result.statusMessage});
+
+		if (_returnFullResponse == true)
+			return result;
+		else
+			return result.statusCode;
+	}
+
+
+
+
+
+
 
 
 	/******************************
@@ -164,230 +229,25 @@ class	GoogleAPI
 	}
 
 
-
-
-
-
-
-	getProjectId(_prodIsStaging = false)
+	/******************************
+	* 
+	*			Auth
+	* 
+	******************************/
+	getAuth()
 	{
-		// PROD?
-		if (this.__env == 'production')
+		if (this.__auth == null)
 		{
-			if (_prodIsStaging == true)
-				return GoogleAPI.PROJECT_STAGING;
-			else
-				return GoogleAPI.PROJECT_PROD;
-		}
-		// STAGING?
-		if (this.__env == 'staging')
-			return GoogleAPI.PROJECT_STAGING;
-		// DEV
-		else
-			return GoogleAPI.PROJECT_DEV;
-	}
-
-	getProjectLocation()
-	{
-		// PROD?
-		if (this.__env == 'production')
-			return GoogleAPI.LOCATION_PROD;
-		// STAGING?
-		if (this.__env == 'staging')
-			return GoogleAPI.LOCATION_STAGING;
-		// DEV
-		else
-			return GoogleAPI.LOCATION_DEV;
-	}
-
-	getPrivateKey()
-	{
-		// PROD?
-		if (this.__env == 'production')
-			return configPROD.private_key;		
-		// STAGING?
-		if (this.__env == 'staging')
-			return configSTAGING.private_key;		
-		// DEV
-		else
-			return configDEV.private_key;		
-	}
-
-	getClientEmail()
-	{
-		// PROD?
-		if (this.__env == 'production')
-			return configPROD.client_email;		
-		// STAGING?
-		if (this.__env == 'staging')
-			return configSTAGING.client_email;		
-		// DEV
-		else
-			return configDEV.client_email;		
-	}
-
-	getWebClient()
-	{
-		// lazy load the web client only when we need it
-		if (this.__webClient == null)
-		{
-			this.__webClient = new WebClientMgr(this.__vertx);
+			this.__auth = new GCPAuthService(this);
 		}
 
-		// return it
-		return this.__webClient;		
-	}	
-
-
-
-
-
-	async	getAuthTokenInternal(_scope)
-	{
-		// this only works in the Google env
-		let	envs = ["production", "staging", "development"];
-		if (envs.includes(this.__env) == false)
-			return null;
-
-		let	timer = DateUtils.Time();
-
-		// get the webclient
-		let	webClient = this.getWebClient();
-
-		// GET it
-		let	serviceAccount = 'default';
-		let result = await webClient.get("metadata.google.internal", "/computeMetadata/v1/instance/service-accounts/" + serviceAccount + "/token?scopes=" + _scope, {
-				"Metadata-Flavor": "Google"
-		}, true, 80, false);
-		if (result.statusCode == 200)
-		{
-			LogUtils.Log("Google Oauth token INTERNAL retrieved in " + DateUtils.TimeDT(timer) + " sec", result);
-
-			return result.content;
-		}
-		else
-		{
-			LogUtils.LogError("Google OAuth INTERNAL Http error: " + result.statusCode, result);
-			return null;
-		}
-	}
-
-	async	getAuthTokenOAuth(_scope)
-	{
-		let	timer = DateUtils.Time();
-
-		// generate the JWT token for it
-		let	jwtToken = this.generateJWTToken(_scope);
-
-		// prepare the content
-		let	grantType = "urn:ietf:params:oauth:grant-type:jwt-bearer";
-		let	content = "grant_type=" + encodeURIComponent(grantType) + "&assertion=" + jwtToken;
-
-		// get the webclient
-		let	webClient = this.getWebClient();
-
-		// POST it
-		let result = await webClient.post("oauth2.googleapis.com", "/token", content, {
-			"Content-Type": "application/x-www-form-urlencoded"
-		}, true, false);
-
-		// is the result good?
-		if (result.statusCode == 200)
-		{
-			LogUtils.Log("Google Oauth token OAUTH retrieved in " + DateUtils.TimeDT(timer) + " sec", result);
-
-			return result.content;
-		}
-		else
-		{
-			LogUtils.LogError("Google OAuth Http error: " + result.statusCode, result);
-			return null;
-		}		
+		return this.__auth;
 	}
 
 	async	getAuthToken(_scope)
 	{
-		// do we have a token?
-		if (this.__tokens.hasOwnProperty(_scope) == true)
-		{
-			// is it still valid?
-			let	tNow = rs.KJUR.jws.IntDate.get('now');
-			if (tNow <= this.__tokens[_scope].expire_at)
-			{
-				LogUtils.Log("Google Auth token found in cache: " + this.__tokens[_scope].token);
-				return this.__tokens[_scope].token;
-			}
-		}
-
-		let	timer = DateUtils.Time();
-
-		// check internally
-		let	tokenData = await this.getAuthTokenInternal(_scope);
-
-		// nothing? check oAuth
-		if (tokenData == null)
-			tokenData = await this.getAuthTokenOAuth(_scope);
-
-		// do we have it?
-		if (tokenData != null)
-		{
-			// save the token
-			this.__tokens[_scope] = {
-				"expire_at": rs.KJUR.jws.IntDate.get('now') + tokenData.expires_in - 120,
-				"token": tokenData.access_token
-			};
-
-			LogUtils.Log("Google Oauth token retrieved in " + DateUtils.TimeDT(timer) + " sec");
-
-			// return it
-			return tokenData.access_token;
-		}
-		else
-		{
-			LogUtils.LogError("Cannot retrieve the Auth Token :(");
-			return null;
-		}
+		return await this.getAuth().getToken(_scope);
 	}
-
-	// Generate a JWT token
-	// Sources:
-	// - https://developers.google.com/identity/protocols/oauth2/service-account#httprest
-	// - https://github.com/kjur/jsrsasign
-	// - https://github.com/kjur/jsrsasign/blob/master/sample_node/dataencrypt
-	generateJWTToken(_scope)
-	{
-		let	tNow = rs.KJUR.jws.IntDate.get('now');
-		let	tEnd = tNow + 3600;
-
-		// prepare the header
-		let	header = {
-			"alg": "RS256",
-			"typ": "JWT"
-		};
-
-		// prepare the payload
-		let	payload = {
-			"iss": "api-helpers@" + this.getProjectId() + ".iam.gserviceaccount.com",
-			"scope": _scope,
-			"aud": "https://oauth2.googleapis.com/token",
-			"iat": tNow,
-			"exp": tEnd
-		};
-
-		// sign the JWT
-		let	sHeader = JSON.stringify(header);
-		let	sPayload = JSON.stringify(payload);
-		let	sJWT = rs.KJUR.jws.JWS.sign("RS256", sHeader, sPayload, this.getPrivateKey());
-
-		return sJWT;
-	}
-
-
-
-
-
-
-
 
 
 
@@ -430,37 +290,6 @@ class	GoogleAPI
 
 
 
-	async	query(_query, _returnFullResponse = false)
-	{
-		// generate the JWT token
-		let	token = await this.getAuthToken(_query.scope);
-		if (token == null)
-		{
-			LogUtils.LogError("Error: unauthorized");
-			return 401;
-		}
-
-		// prepare the headers
-		let	headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer " + token
-		};
-
-		// get the webclient
-		let	webClient = this.getWebClient();
-
-		// depending on the method
-		LogUtils.Log("- Sending " + _query.method + " request to: " + _query.service + _query.endpoint, {"body": _query.body});
-		let	result = await webClient.query(_query.method, _query.service, _query.endpoint, _query.body, headers);
-
-		if (result != null)
-			LogUtils.Log("Result = " + result.statusCode, {"request_message": result.statusMessage});
-
-		if (_returnFullResponse == true)
-			return result;
-		else
-			return result.statusCode;
-	}	
 };
 
 module.exports = {

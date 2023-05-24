@@ -11,9 +11,9 @@ class	GCPAbstractService
 		this.__api = _googleAPI;
 	}
 
-	getProjectId(_prodIsStaging = false)
+	getProjectId()
 	{
-		return this.__api.getProjectId(_prodIsStaging);
+		return this.__api.getProjectId();
 	}
 
 	getProjectLocation()
@@ -30,6 +30,18 @@ class	GCPAbstractService
 	{
 		return this.__api.getPrivateKey();
 	}
+
+	getWebClient()
+	{
+		return this.__api.getWebClient();
+	}
+
+	isLocalEnv()
+	{
+		return this.__api.isLocalEnv();
+	}
+
+
 
 	getHost()
 	{

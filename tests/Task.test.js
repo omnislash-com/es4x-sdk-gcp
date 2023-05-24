@@ -7,6 +7,7 @@ import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 
 
 import { GoogleAPI } from '../src/GoogleAPI';
+const	config = require('./test_config.json');
 
 const suite = TestSuite.create("ES4X Test: Task");
 
@@ -16,7 +17,8 @@ suite.test("GoogleAPI.task_create", async function (context) {
 
 	try
 	{
-
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
 		let	queue = "notification-sender";
 		let	method = "POST";
@@ -37,9 +39,6 @@ suite.test("GoogleAPI.task_create", async function (context) {
 			url = "https://notification-sender-qsyoovkouq-uc.a.run.app/send";
 		else if (env == "production")
 			url = "https://notification-sender-z3vhyoqqcq-uc.a.run.app/send";
-
-		// create the google api object
-		let	googleApi = new GoogleAPI(vertx, env);
 
 		console.log("About to send the query...");
 		let	result = await googleApi.task_create(queue, url, method, body, delay);
