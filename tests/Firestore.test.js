@@ -5,7 +5,6 @@ import { DateUtils } from 'es4x-utils/src/utils/DateUtils';
 import { StringUtils } from 'es4x-utils/src/utils/StringUtils';
 import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 
-
 import { GCPFirestore } from '../src/services/GCPFirestore';
 import { GoogleAPI } from '../src/GoogleAPI';
 const	config = require('./test_config.json');
@@ -22,9 +21,9 @@ suite.test("GoogleAPI.firestore_createDocument", async function (context) {
 		// create the google api object
 		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
-		let	env = "dev";
+		// read the configuration
 		let	testId = "test_" + DateUtils.NowToUniqString();
-		let	path = "test/createdocumentid/" + testId;
+		let	path = ObjUtils.GetValueToString(config, "tests.firestore.firestore_createDocument.folder_path") + testId;
 		let	documentId = StringUtils.GenerateUUID();
 		let	data = {
 			username: "mikosaure",
@@ -44,8 +43,11 @@ suite.test("GoogleAPI.firestore_createDocument", async function (context) {
 			}
 		};
 
+		// do the query
 		console.log("Firestore 1: Create document...");
 		let	result = await googleApi.firestore_createDocument(path, data, documentId);
+
+		// make sure it's ok
 		context.assertEquals(result.statusCode, 200);
 		context.assertEquals(result.document_id, documentId);
 
@@ -76,7 +78,7 @@ suite.test("GoogleAPI.firestore_createDocument", async function (context) {
 		context.assertEquals(toUpdate.age, getResult.data.age);
 		context.assertEquals(toUpdate.omniscore, getResult.data.omniscore);
 		context.assertEquals(data.is_admin, getResult.data.is_admin);
-		context.assertEquals(toUpdate.log.today, getResult.data.log.today);
+		context.assertEquals(Number(toUpdate.log.today), Number(getResult.data.log.today));
 		context.assertEquals(data.friends[0].user_id, getResult.data.friends[0].user_id);
 
 		// delete it
@@ -107,9 +109,9 @@ suite.test("GoogleAPI.firestore_list", async function (context) {
 		// create the google api object
 		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
-		let	env = "dev";
+		// read the configuration
 		let	testId = "test_" + DateUtils.NowToUniqString();
-		let	path = "test/list/" + testId;
+		let	path = ObjUtils.GetValueToString(config, "tests.firestore.firestore_list.folder_path") + testId;
 		let	items = [
 			{
 				"id": "item_3",
@@ -192,9 +194,9 @@ suite.test("GCPFirestore.Firestore_Batch", async function (context) {
 		// create the google api object
 		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
-		let	env = "dev";
+		// read the configuration
 		let	testId = "test_" + DateUtils.NowToUniqString();
-		let	path = "test/list/" + testId;
+		let	path = ObjUtils.GetValueToString(config, "tests.firestore.Firestore_Batch.folder_path") + testId;
 		console.log("Firestore Batch test: " + path);
 
 		// init

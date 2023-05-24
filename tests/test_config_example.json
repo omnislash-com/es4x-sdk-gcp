@@ -1,0 +1,83 @@
+{
+	"region": "",
+	"key": {
+		"type": "service_account",
+		"project_id": "",
+		"private_key_id": "",
+		"private_key": "",
+		"client_email": "",
+		"client_id": "",
+		"auth_uri": "https://accounts.google.com/o/oauth2/auth",
+		"token_uri": "https://oauth2.googleapis.com/token",
+		"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+		"client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/api-helpers%40omni-backend-dev.iam.gserviceaccount.com"
+	},
+	"tests": {
+		"storage": {
+			"storage_rewrite": {
+				"source": {
+					"bucket": "",
+					"path": ""
+				},
+				"destination": {
+					"bucket": "",
+					"path": ""
+				}
+			},
+			"storage_getJSON": {
+				"bucket": "",
+				"path": "",
+				"tests": {
+					"field.path": "value"
+				},
+				"path_to_unknown": "unknown"
+			},
+			"storage_setJSON": {
+				"bucket": "",
+				"folder": ""
+			},
+			"storage_generateSignedUrl": {
+				"bucket": "",
+				"path": ""
+			}
+		},
+		"pubsub": {
+			"pubSub_publishMessage": {
+				"topic": ""
+			}
+		},
+		"fcm": {
+			"firebase_sendPushNotification": {
+				"fcm_token": "",
+				"title": "",
+				"description": "",
+				"image": "",
+				"data": {
+					"field": "value"
+				}
+			}
+		},
+		"task": {
+			"task_create": {
+				"queue": "",
+				"url": "",
+				"method": "POST",
+				"delay": 0,
+				"body": {
+					"field": "value"
+				}
+			}
+		},
+		"firestore": {
+			"firestore_createDocument": {
+				"folder_path": ""
+			},
+			"firestore_list": {
+				"folder_path": ""
+			},
+			"Firestore_Batch": {
+				"folder_path": ""
+			}
+		}
+	}
+}

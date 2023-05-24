@@ -19,17 +19,18 @@ suite.test("GoogleAPI.storage_rewrite", async function (context) {
 		// create the google api object
 		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
-		let	srcBucket = "player_vault_dev";
-		let	srcObject = "/users/22/matches/20220812_185115082000_22_valve_csgo_bcb2c886/server_log.txt.zip";
-		let	destObject = "/test/copy_server_log.txt.zip";
+		// read the configuration
+		let	srcBucket = ObjUtils.GetValueToString(config, "tests.storage.storage_rewrite.source.bucket");
+		let	srcObject = ObjUtils.GetValueToString(config, "tests.storage.storage_rewrite.source.path");
+		let	destBucket = ObjUtils.GetValueToString(config, "tests.storage.storage_rewrite.destination.bucket");
+		let	destObject = ObjUtils.GetValueToString(config, "tests.storage.storage_rewrite.destination.path");
 
+		// do it
+		let	result = await googleApi.storage_rewrite(srcBucket, srcObject, destObject, destBucket);
 
-		console.log("Copying storage file...");
-		let	result = await googleApi.storage_rewrite(srcBucket, srcObject, destObject);
-		console.log("Result: ");
-		console.log(result);
-
+		// test
 		context.assertEquals(result, 200);
+
 		async.complete();
 	}
 	catch(e)
@@ -48,21 +49,18 @@ suite.test("GoogleAPI.storage_getJSON", async function (context) {
 		// create the google api object
 		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
-		let	env = "dev";
-		let	bucket = "data_aggregator";
-		let	objectPath = "/test/package.json";
+		// read the configuration
+		let	bucket = ObjUtils.GetValueToString(config, "tests.storage.storage_getJSON.bucket");
+		let	objectPath = ObjUtils.GetValueToString(config, "tests.storage.storage_getJSON.path");
 
-		console.log("Getting existing storage file...");
+		// do the query
 		let	result = await googleApi.storage_getJSON(bucket, objectPath);
-		console.log("Result: ");
-		console.log(result.content);
 
+		// make sure it's good
 		context.assertEquals(result.statusCode, 200);
-		let	toTest = {
-			"name": "omnislash-analytics",
-			"private": true,
-			"dependencies.@vertx/core": "4.1.0",
-		};
+
+		// test the content
+		let	toTest = ObjUtils.GetValue(config, "tests.storage.storage_getJSON.tests", {});
 		for(let path in toTest)
 		{
 			let	value = ObjUtils.GetValue(result.content, path);
@@ -70,8 +68,8 @@ suite.test("GoogleAPI.storage_getJSON", async function (context) {
 		}
 
 		// unknown object
-		console.log("Getting existing storage file...");
-		result = await googleApi.storage_getJSON(bucket, "unknown");
+		let	unknownPath = ObjUtils.GetValueToString(config, "tests.storage.storage_getJSON.path_to_unknown");
+		result = await googleApi.storage_getJSON(bucket, unknownPath);
 		context.assertEquals(result.statusCode, 404);
 
 		async.complete();
@@ -92,9 +90,9 @@ suite.test("GoogleAPI.storage_setJSON", async function (context) {
 		// create the google api object
 		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
-		let	env = "dev";
-		let	bucket = "data_aggregator";
-		let	objectPath = "/test/upload_" + DateUtils.NowToUniqString() + ".json";
+		// read the configuration
+		let	bucket = ObjUtils.GetValueToString(config, "tests.storage.storage_setJSON.bucket");
+		let	objectPath = ObjUtils.GetValueToString(config, "tests.storage.storage_setJSON.folder") + "upload_" + DateUtils.NowToUniqString() + ".json";
 		let	objectData = {
 			"name": "mike",
 			"age": 40,
@@ -110,14 +108,16 @@ suite.test("GoogleAPI.storage_setJSON", async function (context) {
 			}
 		};
 
-		console.log("Setting JSON to storage file: " + objectPath);
+		// do the query
 		let	result = await googleApi.storage_setJSON(bucket, objectPath, objectData);
+
+		// make sure it's ok
 		context.assertEquals(result, 200);
 
 		// read it again
-		console.log("Reading it again: " + objectPath);
 		result = await googleApi.storage_getJSON(bucket, objectPath);
 
+		// verify the content
 		context.assertEquals(result.statusCode, 200);
 		context.assertEquals(result.content.name, objectData.name);
 		context.assertEquals(result.content.age, objectData.age);
@@ -142,17 +142,14 @@ suite.test("GoogleAPI.storage_generateSignedUrl", async function (context) {
 	// create the google api object
 	let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
-	// create the google api object
-	let	env = "dev";
+	// read the configuration
+	let	bucket = ObjUtils.GetValueToString(config, "tests.storage.storage_generateSignedUrl.bucket");
+	let	targetPath = ObjUtils.GetValueToString(config, "tests.storage.storage_generateSignedUrl.path");
 
 	// generate a signed url to upload
-	let	bucket = "player_vault_dev";
-	let	targetPath = "test/1/img.jpg";
 	let	signedUrl = googleApi.storage_generateSignedUrl(bucket, targetPath);
 
-	console.log("Signed URL = " + signedUrl);
-
-	context.assertEquals("", "");
+	context.assertNotEquals(signedUrl, "");
 });
 
 
