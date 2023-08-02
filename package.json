@@ -4,7 +4,11 @@
 	"version": "0.1.0",
 	"description": "SDK to call Google Cloud Platform services for the ES4X Runtime.",
 	"main": "index.js",
-	"keywords": ["es4x", "javascript", "vertex"],
+	"keywords": [
+		"es4x",
+		"javascript",
+		"vertex"
+	],
 	"author": {
 		"name": "Michael Jegat (Omnislash)",
 		"email": "michael@omnislash.com",
@@ -14,8 +18,8 @@
 		"@vertx/core": "4.1.0",
 		"@vertx/web": "4.2.5",
 		"@vertx/web-client": "4.2.5",
-		"jsrsasign": "10.5.27",
-		"es4x-utils": "git+https://github.com/omnislash-com/es4x-utils.git#main"
+		"es4x-utils": "github:omnislash-com/es4x-utils#main",
+		"jsrsasign": "10.5.27"
 	},
 	"devDependencies": {
 		"@es4x/create": "0.14.0",
@@ -31,6 +35,7 @@
 		"test:Task": "es4x test tests/Task.test.js",
 		"test:FCM": "es4x test tests/FCM.test.js",
 		"test:PubSub": "es4x test tests/PubSub.test.js",
-		"test:Storage": "es4x test tests/Storage.test.js"
+		"test:Storage": "es4x test tests/Storage.test.js",
+		"update:helpers": "npm install git+https://github.com/omnislash-com/es4x-utils.git#main"
 	}
 }
