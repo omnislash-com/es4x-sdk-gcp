@@ -3,7 +3,7 @@ import { GCPAbstractService } from './GCPAbstractService';
 import { StringUtils } from 'es4x-utils/src/utils/StringUtils';
 import { ObjUtils } from 'es4x-utils/src/utils/ObjUtils';
 import { DateUtils } from 'es4x-utils/src/utils/DateUtils';
-
+const	rs = require('jsrsasign');
 
 class	GCPStorageService	extends GCPAbstractService
 {
