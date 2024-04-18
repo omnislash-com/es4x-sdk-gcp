@@ -209,6 +209,37 @@ class	GCPStorageService	extends GCPAbstractService
 		else
 			return _path;
 	}
+
+
+	async deleteObject(_bucketName, _targetPath) {
+		try {
+			// Make sure the path doesn't start with '/'
+			_targetPath = GCPStorageService.CleanPath(_targetPath);
+	
+			// Prepare the endpoint
+			let safePath = encodeURIComponent(_targetPath);
+			let endpoint = `/storage/${GCPStorageService.API_VERSION}/b/${_bucketName}/o/${safePath}`;
+	
+			// Send the DELETE request
+			let ret = await this.queryDELETE(endpoint, true);
+	
+			// Extract status code
+			let statusCode = ObjUtils.GetValueToInt(ret, "statusCode");
+	
+			// Return response similar to Firestore
+			return {
+				status: statusCode,
+				message: statusCode === 200 ? "Object deleted successfully" : "Error deleting object"
+			};
+		} catch (error) {
+			// Handle any errors
+			console.error("Error deleting object:", error);
+			return {
+				status: 500,
+				message: "Internal Server Error"
+			};
+		}
+	}	
 }
 
 module.exports = {

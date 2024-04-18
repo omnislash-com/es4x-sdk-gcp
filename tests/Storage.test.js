@@ -152,6 +152,21 @@ suite.test("GoogleAPI.storage_generateSignedUrl", async function (context) {
 	context.assertNotEquals(signedUrl, "");
 });
 
+suite.test("GoogleAPI.storage_deleteObject", async function (context) {
 
+	console.log("=> Test storage_deleteObject");
+
+	// create the google api object
+	let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
+	// read the configuration
+	let	bucket = ObjUtils.GetValueToString(config, "tests.storage.storage_deleteObject.bucket");
+	let	targetPath = '/org/ypo/chapters/ypocsd/events/3/TestPDFfile.pdf';
+
+	// generate a signed url to upload
+	let	ret = googleApi.storage_delete(bucket, targetPath);
+
+	context.assertEquals(ret, 200);
+});
 
 suite.run();
