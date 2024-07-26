@@ -36,6 +36,7 @@
 		"test:FCM": "es4x test tests/FCM.test.js",
 		"test:PubSub": "es4x test tests/PubSub.test.js",
 		"test:Storage": "es4x test tests/Storage.test.js",
+		"test:Map": "es4x test tests/Map.test.js",
 		"update:helpers": "npm install git+https://github.com/omnislash-com/es4x-utils.git#main"
 	}
 }

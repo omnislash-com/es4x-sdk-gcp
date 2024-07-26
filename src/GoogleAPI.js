@@ -8,6 +8,7 @@ import { GCPFCMService } from './services/GCPFCMService';
 import { GCPPubSubService } from './services/GCPPubSubService';
 import { GCPStorageService } from './services/GCPStorageService';
 import { GCPAuthService } from './services/GCPAuthService';
+import { GCPMapService } from './services/GCPMapService';
 
 
 class	GoogleAPI
@@ -30,6 +31,7 @@ class	GoogleAPI
 		this.__fcm = null;
 		this.__pubsub = null;
 		this.__storage = null;
+		this.__map = null;
 	}
 
 	isLocalEnv()
@@ -288,7 +290,25 @@ class	GoogleAPI
 
 
 
+	/******************************
+	* 
+	*			Map
+	* 
+	******************************/
+	getMap()
+	{
+		if (this.__map == null)
+		{
+			this.__map = new GCPMapService(this);
+		}
 
+		return this.__map;
+	}
+
+	async	map_geocode(_address)
+	{
+		return this.getMap().geocode(_address);
+	}
 
 };
 
