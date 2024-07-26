@@ -25,14 +25,11 @@ class	GCPMapService	extends GCPAbstractService
 		return "https://www.googleapis.com/auth/cloud-platform";
 	}	
 
-	async	geocode(_address)
+	async	geocode(_address, _getTimezone = true)
 	{
+		// get it
 		let	key = this.getMapKey();
 		let	endpoint = "/maps/api/geocode/json?address=" + encodeURIComponent(_address) + "&key=" + key;
-
-		console.log("geocode: " + _address);
-		console.log("Endpoint = " + endpoint);
-
  		let	ret = await this.queryGET(endpoint, true, false);
 
 		// error code?
@@ -121,6 +118,11 @@ class	GCPMapService	extends GCPAbstractService
 				}
 
 				// timezone?
+				if (_getTimezone == true)
+				{
+					let	timezoneInfo = await this.timezone(addressInfo["latitude"], addressInfo["longitude"]);
+					addressInfo["timezone"] = ObjUtils.GetValueToString(timezoneInfo, "result");
+				}
 			}
 
 			return {
@@ -128,7 +130,38 @@ class	GCPMapService	extends GCPAbstractService
 				result: addressInfo
 			};
 		}
+
 	}
+
+	async	timezone(_latitude, _longitude)
+	{		
+		// get it
+		let	key = this.getMapKey();
+		let	endpoint = "/maps/api/timezone/json?location=" + _latitude.toString() + "%2C" + _longitude.toString() + "&timestamp=" + (Date.now()/1000).toString() + "&key=" + key;
+		let	ret = await this.queryGET(endpoint, true, false);
+
+		// error code?
+		let	errorCodeQuery = ObjUtils.GetValueToInt(ret, "statusCode");
+		if (errorCodeQuery != 200)
+		{
+			return {
+				statusCode: errorCodeQuery,
+				result: ""
+			};
+		}
+		else
+		{
+			// parse the content
+			let	contentStr = ObjUtils.GetValue(ret, "content", "");
+			let	contentJSON = JSON.parse(contentStr);
+
+			return {
+				statusCode: errorCodeQuery,
+				result: ObjUtils.GetValueToString(contentJSON, "timeZoneId")
+			};
+		}
+	}
+
 }
 
 module.exports = {

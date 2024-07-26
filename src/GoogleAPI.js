@@ -316,9 +316,9 @@ class	GoogleAPI
 		return this.__map;
 	}
 
-	async	map_geocode(_address)
+	async	map_geocode(_address, _getTimezone = true)
 	{
-		return this.getMap().geocode(_address);
+		return this.getMap().geocode(_address, _getTimezone);
 	}
 
 };
