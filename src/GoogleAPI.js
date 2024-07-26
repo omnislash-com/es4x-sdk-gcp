@@ -19,6 +19,7 @@ class	GoogleAPI
 		this.__location = _location;
 		this.__projectId = ObjUtils.GetValueToString(_key, "project_id");
 		this.__privateKey = ObjUtils.GetValueToString(_key, "private_key");
+		this.__mapKey = ObjUtils.GetValueToString(_key, "map_key");
 		this.__clientEmail = ObjUtils.GetValueToString(_key, "client_email");
 
 		this.__vertx = _vertx;
@@ -54,6 +55,11 @@ class	GoogleAPI
 		return this.__privateKey;
 	}
 
+	getMapKey()
+	{
+		return this.__mapKey;
+	}
+
 	getClientEmail()
 	{
 		return this.__clientEmail;
@@ -71,21 +77,26 @@ class	GoogleAPI
 		return this.__webClient;		
 	}	
 
-	async	query(_query, _returnFullResponse = false)
+	async	query(_query, _returnFullResponse = false, _useAuthToken = true)
 	{
-		// generate the JWT token
-		let	token = await this.getAuthToken(_query.scope);
-		if (token == null)
+		// auth token?
+		let headers = {};
+		if (_useAuthToken == true)
 		{
-			LogUtils.LogError("Error: unauthorized");
-			return 401;
-		}
+			// generate the JWT token
+			let	token = await this.getAuthToken(_query.scope);
+			if (token == null)
+			{
+				LogUtils.LogError("Error: unauthorized");
+				return 401;
+			}
 
-		// prepare the headers
-		let	headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer " + token
-		};
+			// prepare the headers
+			headers = {
+				"Content-Type": "application/json",
+				"Authorization": "Bearer " + token
+			};
+		}
 
 		// get the webclient
 		let	webClient = this.getWebClient();

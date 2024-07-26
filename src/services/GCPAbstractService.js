@@ -31,6 +31,11 @@ class	GCPAbstractService
 		return this.__api.getPrivateKey();
 	}
 
+	getMapKey()
+	{
+		return this.__api.getMapKey();
+	}
+
 	getWebClient()
 	{
 		return this.__api.getWebClient();
@@ -53,9 +58,9 @@ class	GCPAbstractService
 		throw new Error("Abstract Method has no implementation");
 	}	
 
-	async 	queryGET(_endpoint, _returnFullResponse)
+	async 	queryGET(_endpoint, _returnFullResponse, _useAuthToken = true)
 	{
-		return await this.query(_endpoint, _returnFullResponse, QueryUtils.HTTP_METHOD_GET);
+		return await this.query(_endpoint, _returnFullResponse, QueryUtils.HTTP_METHOD_GET, null, _useAuthToken);
 	}
 
 	async 	queryPOST(_endpoint, _returnFullResponse, _body)
@@ -73,13 +78,13 @@ class	GCPAbstractService
 		return await this.query(_endpoint, _returnFullResponse, QueryUtils.HTTP_METHOD_DEL, _body);
 	}
 
-	async	query(_endpoint, _returnFullResponse, _method = "get", _body = null)
+	async	query(_endpoint, _returnFullResponse, _method = "get", _body = null, _useAuthToken = true)
 	{
 		// prepare the query
 		let	query = this.prepareQuery(_endpoint, _method, _body);
 
 		// execute it
-		return await this.__api.query(query, _returnFullResponse);
+		return await this.__api.query(query, _returnFullResponse, _useAuthToken);
 	}
 
 	prepareQuery(_endpoint, _method, _body)

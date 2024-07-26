@@ -20,14 +20,7 @@ suite.test("GoogleAPI.map_geocode", async function (context) {
 		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
 
 		// tests
-		let	tests = [
-			{
-				"address": "United States",
-				"tests": {
-
-				}
-			}
-		];
+		let	tests = ObjUtils.GetValue(config, "tests.map");
 		
 		for(let i=0; i<tests.length; i++)
 		{

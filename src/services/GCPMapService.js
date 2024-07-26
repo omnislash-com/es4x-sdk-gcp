@@ -27,8 +27,34 @@ class	GCPMapService	extends GCPAbstractService
 
 	async	geocode(_address)
 	{
+		let	key = this.getMapKey();
+		let	endpoint = "/maps/api/geocode/json?address=" + encodeURIComponent(_address) + "&key=" + key;
+
 		console.log("geocode: " + _address);
-		return null;
+		console.log("Endpoint = " + endpoint);
+
+ 		let	ret = await this.queryGET(endpoint, true, false);
+
+		// error code?
+		let	errorCodeQuery = ObjUtils.GetValueToInt(ret, "statusCode");
+		if (errorCodeQuery != 200)
+		{
+			return {
+				statusCode: errorCodeQuery,
+				result: {}
+			};
+		}
+		else
+		{
+			// parse the content
+			let	contentStr = ObjUtils.GetValue(ret, "content", "");
+			let	contentJSON = JSON.parse(contentStr);
+
+			return {
+				statusCode: 200,
+				result: contentJSON
+			};
+		}
 	}
 }
 
