@@ -50,9 +50,82 @@ class	GCPMapService	extends GCPAbstractService
 			let	contentStr = ObjUtils.GetValue(ret, "content", "");
 			let	contentJSON = JSON.parse(contentStr);
 
+			// get the result
+			let	addressInfo = {};
+			let	addressResult = ObjUtils.GetValue(contentJSON, "results[0]");
+
+			// do we have something?
+			if (CoreUtils.IsValid(addressResult) == true)
+			{
+				// full address
+				addressInfo["value"] = ObjUtils.GetValueToString(contentJSON, "results[0].formatted_address");
+
+				// lat / lon
+				addressInfo["latitude"] = ObjUtils.GetValueToFloat(contentJSON, "results[0].geometry.location.lat");
+				addressInfo["longitude"] = ObjUtils.GetValueToFloat(contentJSON, "results[0].geometry.location.lng");
+				
+				// components
+				let	componentMapping = [
+					{
+						type: "country",
+						long: "country",
+						short: "country_code"
+					},
+					{
+						type: "administrative_area_level_1",
+						long: "aal1",
+						short: ""
+					},
+					{
+						type: "administrative_area_level_2",
+						long: "aal2",
+						short: ""
+					},
+					{
+						type: "locality",
+						long: "locality",
+						short: ""
+					},
+					{
+						type: "postal_code",
+						long: "postal_code",
+						short: ""
+					},
+					{
+						type: "street_number",
+						long: "street_number",
+						short: ""
+					},
+					{
+						type: "route",
+						long: "route",
+						short: ""
+					},
+				];
+				for(let component of addressResult.address_components)
+				{
+					// test each mapping
+					for(let mapping of componentMapping)
+					{
+						if (component.types.includes(mapping.type) == true)
+						{
+							// save them
+							if (StringUtils.IsEmpty(mapping.long) == false)
+								addressInfo[mapping.long] = component.long_name;
+							if (StringUtils.IsEmpty(mapping.short) == false)
+								addressInfo[mapping.short] = component.short_name;
+
+							break;
+						}
+					}
+				}
+
+				// timezone?
+			}
+
 			return {
 				statusCode: 200,
-				result: contentJSON
+				result: addressInfo
 			};
 		}
 	}
