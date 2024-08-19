@@ -299,6 +299,10 @@ class	GoogleAPI
 		return this.getStorage().generateSignedUrl(_bucketName, _targetPath, _expiration, _httpMethod);
 	}
 
+	async	storage_deleteObject(_bucketName, _targetPath)
+	{
+		return await this.getStorage().deleteObject(_bucketName, _targetPath);
+	}
 
 
 	/******************************
