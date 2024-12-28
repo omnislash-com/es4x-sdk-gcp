@@ -77,7 +77,7 @@ class	GoogleAPI
 		return this.__webClient;		
 	}	
 
-	async	query(_query, _returnFullResponse = false, _useAuthToken = true)
+	async	query(_query, _returnFullResponse = false, _useAuthToken = true, _contentType = "application/json")
 	{
 		// auth token?
 		let headers = {};
@@ -93,7 +93,7 @@ class	GoogleAPI
 
 			// prepare the headers
 			headers = {
-				"Content-Type": "application/json",
+				"Content-Type": _contentType,
 				"Authorization": "Bearer " + token
 			};
 		}
@@ -102,8 +102,12 @@ class	GoogleAPI
 		let	webClient = this.getWebClient();
 
 		// depending on the method
+		let	dataIsJon = _contentType == "application/json";
 		LogUtils.Log("- Sending " + _query.method + " request to: " + _query.service + _query.endpoint, {"body": _query.body});
-		let	result = await webClient.query(_query.method, _query.service, _query.endpoint, _query.body, headers);
+		LogUtils.Log("With content type: " + _contentType);
+		LogUtils.Log("dataIsJon: " + dataIsJon);
+
+		let	result = await webClient.query(_query.method, _query.service, _query.endpoint, _query.body, headers, false, dataIsJon);
 
 		if (result != null)
 			LogUtils.Log("Result = " + result.statusCode, {"request_message": result.statusMessage});
@@ -284,9 +288,9 @@ class	GoogleAPI
 		return await this.getStorage().getJSON(_bucket, _path, _default);
 	}
 
-	async	storage_setJSON(_bucket, _path, _content)
+	async	storage_setJSON(_bucket, _path, _content, _contentType = "application/json")
 	{
-		return await this.getStorage().setJSON(_bucket, _path, _content);
+		return await this.getStorage().setJSON(_bucket, _path, _content, _contentType);
 	}
 
 	async	storage_rewrite(_srcBucket, _srcPath, _destPath, _destBucket = "")

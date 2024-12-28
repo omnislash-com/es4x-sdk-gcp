@@ -63,9 +63,9 @@ class	GCPAbstractService
 		return await this.query(_endpoint, _returnFullResponse, QueryUtils.HTTP_METHOD_GET, null, _useAuthToken);
 	}
 
-	async 	queryPOST(_endpoint, _returnFullResponse, _body)
+	async 	queryPOST(_endpoint, _returnFullResponse, _body, _contentType = "application/json")
 	{
-		return await this.query(_endpoint, _returnFullResponse, QueryUtils.HTTP_METHOD_POST, _body);
+		return await this.query(_endpoint, _returnFullResponse, QueryUtils.HTTP_METHOD_POST, _body, true, _contentType);
 	}
 
 	async 	queryPATCH(_endpoint, _returnFullResponse, _body)
@@ -78,13 +78,13 @@ class	GCPAbstractService
 		return await this.query(_endpoint, _returnFullResponse, QueryUtils.HTTP_METHOD_DEL, _body);
 	}
 
-	async	query(_endpoint, _returnFullResponse, _method = "get", _body = null, _useAuthToken = true)
+	async	query(_endpoint, _returnFullResponse, _method = "get", _body = null, _useAuthToken = true, _contentType = "application/json")
 	{
 		// prepare the query
 		let	query = this.prepareQuery(_endpoint, _method, _body);
 
 		// execute it
-		return await this.__api.query(query, _returnFullResponse, _useAuthToken);
+		return await this.__api.query(query, _returnFullResponse, _useAuthToken, _contentType);
 	}
 
 	prepareQuery(_endpoint, _method, _body)

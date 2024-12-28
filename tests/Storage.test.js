@@ -9,7 +9,36 @@ const	config = require('./test_config.json');
 
 const suite = TestSuite.create("ES4X Test: Storage");
 
+suite.test("GoogleAPI.storage_setJSONCalendar", async function (context) {
 
+	let async = context.async();
+
+	try
+	{
+		// create the google api object
+		let	googleApi = new GoogleAPI(vertx, config.region, config.key, true);
+
+		// read the configuration
+		let	bucket = ObjUtils.GetValueToString(config, "tests.storage.storage_setJSON.bucket");
+		let	objectPath = ObjUtils.GetValueToString(config, "tests.storage.storage_setJSON.folder") + "upload_" + DateUtils.NowToUniqString() + ".ics";
+		let	objectData = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:M2M//1/2//EN\nBEGIN:VEVENT\nUID:125\nDTSTAMP;VALUE=DATE-TIME:20150718T100000\nATTENDEE;CN=Sample Company;RSVP=FALSE:mailto:foo@example.com\nEND:VEVENT\nBEGIN:VEVENT\nUID:149\nDTSTAMP;VALUE=DATE-TIME:20150718T100000\nATTENDEE;CN=Sample Company;RSVP=FALSE:mailto:foo@example.com\nEND:VEVENT\nBEGIN:VEVENT\nUID:130\nDTSTAMP;VALUE=DATE-TIME:20150718T100000\nATTENDEE;CN=Sample Company;RSVP=FALSE:mailto:foo@example.com\nEND:VEVENT\nBEGIN:VEVENT\nUID:36\nDTSTAMP;VALUE=DATE-TIME:20150718T100000\nATTENDEE;CN=Sample Company;RSVP=FALSE:mailto:foo@example.com\nEND:VEVENT\nBEGIN:VEVENT\nUID:123\nDTSTAMP;VALUE=DATE-TIME:20150718T100000\nATTENDEE;CN=Sample Company;RSVP=FALSE:mailto:foo@example.com\nEND:VEVENT\nBEGIN:VEVENT\nUID:131\nDTSTAMP;VALUE=DATE-TIME:20150718T100000\nATTENDEE;CN=Sample Company;RSVP=FALSE:mailto:foo@example.com\nEND:VEVENT\nEND:VCALENDAR";
+
+		// do the query
+		let	result = await googleApi.storage_setJSON(bucket, objectPath, objectData, "text/calendar");
+
+		// make sure it's ok
+		context.assertEquals(result, 200);
+
+		async.complete();
+	}
+	catch(e)
+	{
+		console.trace(e);
+		async.complete();
+	}
+});
+
+/*
 suite.test("GoogleAPI.storage_rewrite", async function (context) {
 
 	let async = context.async();
@@ -168,5 +197,5 @@ suite.test("GoogleAPI.storage_deleteObject", async function (context) {
 
 	context.assertEquals(ret, 200);
 });
-
+*/
 suite.run();

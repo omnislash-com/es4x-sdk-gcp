@@ -57,7 +57,7 @@ class	GCPStorageService	extends GCPAbstractService
 	}
 
 	// https://cloud.google.com/storage/docs/json_api/v1/objects/insert
-	async	setJSON(_bucket, _path, _content)
+	async	setJSON(_bucket, _path, _content, _contentType = "application/json")
 	{
 		// make sure the path doesn't start with '/'
 		_path = GCPStorageService.CleanPath(_path);
@@ -67,7 +67,7 @@ class	GCPStorageService	extends GCPAbstractService
 		let	endpoint = "/upload/storage/" + GCPStorageService.API_VERSION + "/b/" + _bucket + "/o?uploadType=media&name=" + safePath;
 
 		// send the query
-		let	ret = await this.queryPOST(endpoint, true, _content);
+		let	ret = await this.queryPOST(endpoint, true, _content, _contentType);
 
 		// error code?
 		return ObjUtils.GetValueToInt(ret, "statusCode");
